@@ -1,0 +1,601 @@
+Part 1 - Part C:
+Back to working with React:
+const Hello = (props) => {
+  return (
+    <div>
+      <p>
+        Hello {props.name}, you are {props.age} years old
+      </p>
+    </div>
+  )
+}
+
+const App = () => {
+  const name = 'Peter'
+  const age = 10
+
+  return (
+    <div>
+      <h1>Greetings</h1>
+      <Hello name="Maya" age={26 + 10} />
+      <Hello name={name} age={age} />
+    </div>
+  )
+}
+
+1. Analyze the code:
+Hello Component with JSX with a return of a div with a paragraph of hello which goes into the prop object to access name and age property. 
+Then in App we assign name to Peter, age to 10, and we return a div. In this we have one where name is assigned to maya, and where age is assigned to 36, then the other is using the function level assignments, so I notice there can be assignments in the component invocation, but also referenced with template literals when defined above in the JS portion of the component. 
+
+const bornYear = () => {
+	const yearNow = new Date().getFullYear() --> Gets full year of the current data
+	return yearNow - props.age --> so 2026 - the age of the user gives you the birth year
+} ---> an arrow function without a parameter.
+
+It talks of how JavaScript, regularly uses functions within functions, acting as helper functions. 
+
+Destructuring - 
+
+"In our previous code, we had to reference the data passed to our component as props.name and props.age. Of these two expressions, we had to repeat props.age twice in our code."
+
+But since props is an object, you can streamline this.
+ const name = props.name
+  const age = props.age
+
+const { name, age } = props --> This goes in and finds props.name, props.age and assigns them; name = props.name, age = props.age.
+
+Here they then use it as a parameter of the arrow function:
+const Hello = ({ name, age }) => {
+  const bornYear = () => new Date().getFullYear() - age
+
+  return (
+    <div>
+      <p>
+        Hello {name}, you are {age} years old
+      </p>
+      <p>So you were probably born in {bornYear()}</p>
+    </div>
+  )
+}
+
+So you do not need to destructure in the function at all. 
+Instead of taking the whole props object and then assigning the properties we want, we instead assign the values of the properties directly to variables by destructuring the props object that is passed to the component function as a parameter. 
+
+Then they have page re-rendering, dynamic and not static pages:
+const App = (props) => {
+  const {counter} = props
+  return (
+    <div>{counter}</div>
+  )
+}
+
+export default App
+
+So we don't destructure immediately like they had above, but instead take the whole props object, pass it into an arrow function, then we take out counter, then just return the div of counter, not really any dynamic code here?
+
+main.jsx becomes:
+import ReactDOM from 'react-dom/client'
+
+import App from './App'
+
+let counter = 1
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <App counter={counter} />
+)
+
+So this is wild I don't see incrementing? I see they declare counter, then there is this ReactDOM.createRoot - and it renders the component App with counter as counter, so we're passing App the object with counter set to 1. 
+The app component is given the counter via the counter prop, this component renders the value to the screen, but what happens when the value of counter changes? If you add counter +=1, the component will not re-render, we could get it to re-render by calling the render method a second time; 
+let counter = 1
+
+const root = ReactDOM.createRoot(document.getElementById('root'))
+
+const refresh = () => {
+  root.render(
+    <App counter={counter} />
+  )
+}
+
+refresh()
+counter += 1
+refresh()
+counter += 1
+refresh()
+
+So on refresh you make the root render, and give the App component the counter where counter has the assigned value, don't tell me this is the way to accomplish this normally, this seems more difficult than it has to be. 
+They then go in and increment the counter every second ny using setInterval.
+where refresh runs then counter increments. --- Yep it tells you repeated calls to render method is NOT recommended.
+How you can accomplish this is via a Stateful Component
+
+Then we introduce the idea of state hooks, what is a state hook; well apparently in React it is how you maintain state. 
+import { useState } from 'react'
+
+const App = () => {
+
+  const [ counter, setCounter ] = useState(0)
+
+
+  setTimeout(
+    () => setCounter(counter + 1),
+    1000
+  )
+
+  return (
+    <div>{counter}</div>
+  )
+}
+
+export default App
+
+So what is going on here, I think this is what Claude said was the big shift from class builds of React, to hooks - the useState.
+so they import useState from 'react'
+then create an app component, then we have something sort of strange here, it looks like array syntax and is being assigned to useState with an argument passed? 
+
+So we import the useState function... Then the function body that defines the component begins with that function call, and the function call is carrying a LOT of weight here. The function adds state to the component and renders it initialized with the value set to zero, the function returns an array that contains two items. "We assignthe items to the variables counter and setCounter" via destructuring. 
+I thought destructuring was done with {} curly braces, not brackets. 
+and I'm sort of curious how does useState return an array of two items, does it always return a counter and setCounter? 
+Continuing:
+The counter variable is assigned the initial value of state, which is zero. Then the variable setCounter is assigned a function that will be used to modify the state.  So setCounter is the function which modifies the state (A little bit strange here because I don't see increments, seems like a lot is happening behind the scenes) 
+So setCounter is essentially a callback in this instance. 
+
+When setCounter - the state modifying function is called, React re-renders the component, which means that the function body of the component function gets re-executed.
+
+So setCounter is essentially a callback, it's the thing modifying state, and in this instance he hook it up to a timer, then through some React behind the scenes magic, React knows when this function gets used it needs to re-render the component which is using it.
+
+So then it goes on to say, the second time the component function is executed it calls the useState function, and returns the new value of the state: in this instance it is 1. 
+So is this running the whole function body of whatever component triggers the setCounter function? 
+"Every time setCounter modifies the state, it causes the component to re-render" 
+Then it goes on to suggest how you can debug the application by logging the values of the component's variables to the console. 
+
+Then it says you change the application so that increasing the counter happens when a user clicks a button, which is implemented with the button element. 
+So this is how we do eventHandlers in React:
+
+
+THE STATE:
+const [ counter, setCounter] = useState(0) ---> Initializing the counter to 0 and saying, what I suppose the useState callback re-render/state alteration trigger function will be
+
+const handleClick = () => {
+	console.log(`clicked`)
+}
+
+return (
+	<div>
+		<div>{counter}</div>
+		<button onClick={handleClick}> --- woah what duh, the JSX handles the click?
+			plus
+		</button>
+	</div> 
+
+	)
+}
+
+So there is this property of the JSX element button, where we can say onClick then we pass a callback here, in this instance it's handleClick --> If you wanted state alteration and re-rendering per click wouldn't you just make setCounter the callback here?
+
+You can also defined the function of the onClick event directly in the JSX property assignment; 
+onClick={() => console.log('clicked')}>
+But remember you will be required to follow JSX logic, so no statements only expression forms.
+
+Yeah, and like I thought, here they are passing in setCounter with the argument of counter + 1, 
+<button onClick={() => setCounter(counter + 1)}>
+  plus
+</button>
+
+so does setCounter have to inherently have as its argument the incrementing of counter? I don't want to make this more complex than it has to be while learning, but I could imagine someone instead wanting to pass a callback in that even where we essentially do a helper function checking requirements before we alter counter based on the logic we have within that helper function.
+
+You can also see they have a reset button here; 
+      <button onClick={() => setCounter(0)}> 
+        zero
+      </button>
+
+Now my first thought of this, great - super simple easy management of eventHandling, I really like that, I honestly could see myself preferring this over vanilla JS where I have to grab DOM elements and keep track of state in a more difficult manner. On the flip, I'm sure this isn't true because knowing programmers/developers they think of everything seemingly or at least me being in these well trodden technologies where programmers have encountered and fixed things years before I touch them - it seems like it's a bit rigid here, setCounter is some behind the scenes function running on causation, but think about that - behind the scenes means I have sort of some limited functionality, I can increment counter and re-render the component. What if like I said, I want more than just an element re-render, what if I want programming logic on click right...? This can't be that narrow, it can't be. 
+
+So it goes to show an example; 
+<button onClick={() => setCounter(counter + 1)}> 
+  plus
+</button>
+
+saying what if you tried to pass it as a simpler form; 
+<button onClick={setCounter(counter + 1)}> 
+  plus
+</button>
+
+What's the difference here? one is defining an arrow function where setCounter is a callback, right? the other at least in regular JavaScript would be essentially invocation, SomeFunction() vs SomeFunction
+
+It goes on to say defining event handlers within JSX-templates is not a great idea. Then it separates the event handlers 
+const App = () => {
+  const [ counter, setCounter ] = useState(0)
+
+
+  const increaseByOne = () => setCounter(counter + 1)
+  
+  const setToZero = () => setCounter(0)
+
+  return (
+    <div>
+      <div>{counter}</div>
+
+      <button onClick={increaseByOne}>
+        plus
+      </button>
+
+      <button onClick={setToZero}>
+        zero
+      </button>
+    </div>
+  )
+}
+
+So here they separate the functionality, before in the JS we had onClick code being ran, now instead if runs a predefined function. 
+
+"Passing State to child components"
+Write React components that are small and reusable across the application and even across projects (Pretty wild I'm getting flashbacks to Figma components here...) Here they decompose the component into 3 separate components with specific responsibilities. One component for displaying the counter, and two components for buttons. 
+Display component - responsible for displaying the value of the counter - 
+"One best practice in React is to life the state up in the component hierarchy"
+ - Doc says several components need to reflect the same changing data (Sort of what I was wondering here right, with this useState it's like each component is isolated from each other, what if they're depending on any changes to one another?) "We recommend lifting the shared state up to their closest common ancestor' -- Why does this remind me of propagation, like if I had list items that all had events, I'd just listen to the list not the list items. Is this the same idea at work here? 
+
+So then he says place the application's state in the App component and pass it down to the Display component through props
+const Display = (props) => {
+  return (
+    <div>{props.counter}</div>
+  )
+}
+
+Not entirely sure what exactly that means since props are essentially objects, we have to pass it down? The hell does passing it down mean, how does that work.
+
+Huh (Confusion) he says it's simple though, that you need to pass the state of the counter 
+const App = () => {
+  const [ counter, setCounter ] = useState(0)
+
+  const increaseByOne = () => setCounter(counter + 1)
+  const setToZero = () => setCounter(0)
+
+  return (
+    <div>
+
+      <Display counter={counter}/>
+      <button onClick={increaseByOne}>
+        plus
+      </button>
+      <button onClick={setToZero}> 
+        zero
+      </button>
+    </div>
+  )
+}
+
+Looking at the code, I see we still are in the App component, we're still doing the same thing with counter/setCounter to useState(0) init, then we have separated responsibility/concern/functionality by not having function behavior in JSX - increaseByOne is defined, and so is setToZero. Within our JSX return, I see we call the Display component and pass the prop with counter, set to our counter, okay. then on click increase by one, yep, on click we can also reset to zero. So we're passing our counter here into another component (I wonder if we're actually passing the reference to that same counter, or just it's value, for state it makes sense they point at the same counter, but wooo I can imagine this getting super messy if we have a ton of components all working on the same object state like that) So they don't show Display here, but I'm assuming it's a component with some logic, but he does show the Button component; Oh wait I'm wrong, okay so he does show display, it was before the App component, and it looks like all it does is return props.counter. So it just returns a div with the counter value. Okay, so if I needed logic done here, I can imagine doing some logic, like let's do some alterations etc; but also onClick is displayCounter, but setCounter? I don't see that in this code, so how is the re-render happening? Alright on to the Button component:
+const Button = (props) => {
+  return (
+    <button onClick={props.onClick}>
+      {props.text}
+    </button>
+  )
+}
+
+okay, so we're passing the prop here, and the button onClick status is equal to the prop onClick status? 
+
+const App = () => {
+  const [ counter, setCounter ] = useState(0)
+
+  const increaseByOne = () => setCounter(counter + 1)
+
+  const decreaseByOne = () => setCounter(counter - 1)
+  const setToZero = () => setCounter(0)
+
+  return (
+    <div>
+      <Display counter={counter}/>
+
+      <Button
+        onClick={increaseByOne}
+        text='plus'
+      />
+      <Button
+        onClick={setToZero}
+        text='zero'
+      />     
+      <Button
+        onClick={decreaseByOne}
+        text='minus'
+      />           
+    </div>
+  )
+}
+
+Looking at this code.. 
+I see that we are saying Button onClick = callback, the functionality we want on that click, then we pass in some data, this is text in this instance which will display. 
+The same deal for the rest. 
+
+This is getting a bit out there, because we have components within components, not new, then we're passing prop data, not new either, but instead of data now we're passing objects, alright, and data, then the component which is used uses that function which is stored in the prop, and then uses the data within it accordingly... Alright, it makes sense when you say it, but it's definitely involved. 
+
+
+CHANGES IN STATE CAUSE RE-RENDERING. 
+
+This is a rehash, when the application starts, teh code in App is executed. This code uses a useState hook to create the application state, setting an initial value of the variable counter. The component App contains the Display component which displays the counter's value (this is passed via a prop) and three Button components (each is passed a function callback, where the function itself lives in App component, and data to be acted on is also passed as a prop), the buttons have event handlers, wich are used to change the state of the counter. 
+
+When one is clicked, the event handler changes the state of App - with setCounter function (This is kind of confusing for me, because in the early example we explicitly called setCounter to essentially say, hey we're changing state rerender the component I'm in, but here in this further along code, I didn't see setCounter!) But then this goes on to say Calling a function that changes the state causes the component to re-render. 
+Then we have that sort of propagation aspect here, so when one of the outer components housing other components re-renders, so do all those inside it. -alright, not that wild. 
+
+Then he goes on to refactor, since a component only uses certain fields of the prop passed, you can destructure, not that wild. 
+const Display = (props) => {
+  return (
+    <div>{props.counter}</div>
+  )
+}
+becomes;
+const Display = ({ counter }) => {
+  return (
+    <div>{counter}</div>
+  )
+}
+
+
+Okay... So this was all reading, no practice, I typed some code in this text file but I did not type any code in VSCode..
+
+
+
+
+
+
+Rabbit hole reading: "lift the state up" -- forwards me to some article
+
+
+Follow up with the stud tool: 
+Destructuring Props is understood [X]
+onClick as reference vs invocation [X]
+Why manual re-render calls are wrong[X]
+
+useState array destructuring - the brackets are pulling values out by position, not by name. 
+Array destructuring as position-based extraction: I understand. 
+
+With destructuring both exist, braces are by key name when dealing with objects, while for brackets it's by position.
+const { name, age } = someObject     // braces: by key name
+const [ first, second ] = someArray  // brackets: by position
+
+useState returns an array, so I use brackets. I can chose the names, it doesn't have to be counter and setCounter. 
+
+Does useState always return a counter and a setter? Yes.
+It always returns two things; the current value at position 0, and a function to change it at position 1 of the array.
+const [ clicks, setterClicks] = useState(0)
+A callback is a function you hand to something else so it can call it later. setCounter is the opposite, it's a function React gave to me and when I call it directly. 
+
+What happens when this function of setX is called? It re-runs the whole component function body. React marks the component that wons the state and needs an update, then re-runs the function from top to bottom, and every single component inside - this is the propagation, similar to HTML with lists, and handling events. 
+
+
+How real handlers work in React: 
+const increaseByOne = () => {
+  if (counter >= 10) return
+  console.log('incrementing from', counter)
+  setCounter(counter + 1)
+}
+
+<Display counter={counter} />
+
+counter is a number, so its value gets copied in. Display cannot change App's state, and if it somehow reassigned its prop, nothing would happen upstream. Data flows one direction only.
+
+More precisely: counter inside any given render is a snapshot. It's the value as of that render, frozen. Calling setCounter doesn't change the existing counter variable, it asks React to re-run the function so a new counter variable exists with the new value.
+
+The child cannot change the parent's state, but it can hand it a function that does. 
+This is similar in event delegation in that there is a shared ancestor instead of duplicating at each leaf.
+
+1d - A more complex state, debugging React apps. 
+
+Complex State - In the previous example the application state was simple as it was comprised of a single integer, but what if it is more complex? 
+It suggests using useState multiple times to create separate "pieces" of state. 
+const App = () => {
+  const [left, setLeft] = useState(0)
+  const [right, setRight] = useState(0)
+
+  return (
+    <div>
+      {left}
+      <button onClick={() => setLeft(left + 1)}>
+        left
+      </button>
+      <button onClick={() => setRight(right + 1)}>
+        right
+      </button>
+      {right}
+    </div>
+  )
+}
+
+The component is getting access to the functions setLeft and setRight, so we have two separate states here. 
+The component's state or a piece of its state can be any type - and you can have multiple states. You could even use an object as such: 
+const App = () => {
+  const [clicks, setClicks] = useState({
+    left: 0, right: 0
+  })
+
+Then we get:
+  const handleLeftClick = () => {
+    const newClicks = { 
+      left: clicks.left + 1, 
+      right: clicks.right 
+    }
+    setClicks(newClicks)
+  }
+
+So we have our function here which creates the object literal of the left quantity of clicks increased by one, then passes that into setClicks to update the state by the prescribed nature. 
+
+Mental Mode:
+You have something, a state change which you want initiated, so you create a state via useState, and the function which means to alter that state, and on some action which you define as a function (generally an arrow function) you can create the argument you will pass to the function that updates the state as an argument. 
+
+He ends up using object spread syntax; 
+const handleLeftClick = () => {
+  const newClicks = { 
+    ...clicks, 
+    left: clicks.left + 1 
+  }
+  setClicks(newClicks)
+}
+
+Alright, bit rusty on this will need to check that let me google it real quick:
+.... Okay, allows you to copy the properties of an existing object into a new object. 
+const user = {name: 'Trey', age: 26};
+const copyTrey = {...user};
+But then you can append to this;
+const copyTrey = {...user, favColor: "red"};
+You can also merge multiple objects into one, but if you have the same keys, last to be inserted/spread will override that before it. 
+
+a = {test: 'hi'};
+b = {test: 'well, hello!'};
+c = {...a, ...b}; ---> {test: 'well, hello!'};
+
+"3. Updating Properties SafelyBecause properties defined later overwrite earlier ones, you can easily update specific fields of an object while keeping the rest intact. This is an essential pattern when managing state in libraries like React. [1] (https://www.w3schools.com/react/react_es6_spread.asp), [2] (https://www.youtube.com/watch?v=Fw9IfnUBpqc&t=1102), [3] (https://www.youtube.com/shorts/dLcqxF43Tvk)javascriptconst product = { id: 101, name: 'Laptop', price: 999 };
+
+// Updating the price while keeping id and name
+const updatedProduct = { ...product, price: 899 };
+
+console.log(updatedProduct); // { id: 101, name: 'Laptop', price: 899 }"
+
+This only performs a shallow copy - primitives are completely duplicated but nested objects or arrays are only copied by reference - reminds me of weird window concept of pointers from Python. 
+
+So with our handleClicks here, we are creating a copy of clicks, then left: clicks.left + 1, because even though left exists in the first Object, that which we are copying from, the last defined takes precedent, thus we can safely overwrite the value like we are doing here. 
+
+But it is not necessary to assign a variable and pass it in, but in this case can just pass it directly; 
+const handleLeftClick = () =>
+  setClicks({ ...clicks, left: clicks.left + 1 })
+
+const handleRightClick = () =>
+  setClicks({ ...clicks, right: clicks.right + 1 })
+
+Then he goes on, why didn't we just update state directly like clicks.left++ --> That's definitely what we would've done in Python. But in React, mutation is not allowed, not directly. (Note, kind of weird though because this shallow copy, with an assignment I wonder if that'd through an error; for instance--
+const handleLeftClick = () => {
+	const newClicks = {
+	...clicks,
+	right: clicks.right + 1
+	}
+}
+
+Changing state ALWAYS has to be done by setting the state to a new object. 
+Changing state will always need to be done by setting the state to a new object. And if they're not changed, you can just use the object spread. 
+Storing all of the state in a single state object can be a poor choice. 
+
+HANDLING ARRAYS:
+const App = () => {
+  const [left, setLeft] = useState(0)
+  const [right, setRight] = useState(0)
+
+  const [allClicks, setAll] = useState([])
+
+
+  const handleLeftClick = () => {
+    setAll(allClicks.concat('L'))
+    setLeft(left + 1)
+  }
+
+
+  const handleRightClick = () => {
+    setAll(allClicks.concat('R'))
+    setRight(right + 1)
+  }
+
+  return (
+    <div>
+      {left}
+      <button onClick={handleLeftClick}>left</button>
+      <button onClick={handleRightClick}>right</button>
+      {right}
+
+      <p>{allClicks.join(' ')}</p>
+    </div>
+  )
+}
+
+What is happening here.. So I see we are destructuring an array, allClicks and setAll, but useState doesn't have an initial value? 
+So... it looks like we make this set to an array, then concatenate the string L or R respectively, but then we go into the other states and set them - so it's like a structuring; the allClicks is all clicks that happen then it goes and delegates those into their respective positions. 
+
+Then we run a join, where the delimiter is '' so each gets a space. So that's interesting, can we initialize useState as any data type? The obvious example is an integer starting at 0, but what if it was for instance a Boolean (not sure how that use case would make sense)
+
+Everything needs to be new arrays, no in-place mutation such as push. 
+I'm left wondering... Why can't we mutate the state directly, but I know that must be a massive rabbit hole and may lead to more confusion than understanding at this point. 
+
+It says that it leads to very difficult bugs, which will be hard to debug. 
+
+
+- Update of the state is asynchronous -
+Here they expand the total number of button presses in the state total, whose value is always updated when the buttons are pressed
+
+const App = () => {
+	const [left, setLeft] = useState(0)
+	const [right, setRight] = useState(0)
+	const [allClicks, setAll] = useState([])
+	const [total, setTotal] = useState(0)
+
+	const handleLeftClick = () => {
+		setAll(allClicks.concat(`L`))
+		setLeft(left + 1)
+		setTotal(total + 1)
+	}
+
+		const handlerRightClick = () => {
+		setAll(allClicks.concat(`R`))
+		setRight(right + 1)
+		setTotal(total + 1)
+	}
+	return (
+<div>
+	{left}
+	<button onClick={handleLeftClick}>left</button>
+	<button onClick={handleRightClick}>right</button>
+	{right}
+	<p>{allClicks.join(` `)}</p>
+	<p>total {total}</p>
+</div>
+	)
+}
+
+This will always produce a count which is one less than the actual count -why?
+The state update in React is asynchronously, it doesn't happen immediately, but at some point. After the current component function is finished, and before the component is rendered again. 
+--- Do they use async JS for this?
+const App = () => {
+  // ...
+  const handleLeftClick = () => {
+    setAll(allClicks.concat('L'))
+    const updatedLeft = left + 1
+    setLeft(updatedLeft)
+    setTotal(updatedLeft + right) 
+  }
+
+  // ...
+}
+
+How does this compare to the first code blocks?
+	const handleLeftClick = () => {
+		setAll(allClicks.concat(`L`))
+		setLeft(left + 1)
+		setTotal(total + 1)
+	}
+
+Was the old code block for handling left clicks, the difference here is we are creating a variable, updatedLeft which is equal to left + 1, and then passing that to set left instead of directly accessing setLeft and passing it. 
+
+That's all it goes into on this... But let me try and understand this without diving back into Async JS, which I do not want to do right now.. So the event loop... call stack.. I remember it, queue... Alright so I'm guessing behind the scenes state updates are promises. Eh I don't even want to dive into that! I'll just chalk it up, it's a async behavior for updating state, so instead we use an assignment for invocation..
+
+Conditional Rendering - 
+This makes a application where rendering of the click is handled by a new history component - 
+Okay, checks the prop to see if anything has been pressed.. otherwise a div with button press history is allClick array presented as a string. 
+
+This is dependent on the state of another component for its behavior, if the state of allClicks changes, so does the behavior of History. This is called CONDITIONAL RENDERING - essentially saying one components rendering behavior is dependent on the state of another? This is obviously going to be used continuously, if a someone is logged in, etc. 
+
+Then it does the button thing again, I think React at least everything covered thusfar isn't that wild, I wish it'd stay this level, but I'm sure just like everything else it will get insanely complex and confusing. Why doesn't programming simply let there be simple implementations, I swear there's a million different ways for things and at times it doesn't even make sense, like you save 3 words of syntax for the same exact implementation for the sake of shorthand that is more confusing. But whatever!
+
+Alright so then it talks about Old React - saying we use state hooks, I probably need to read up on this. 
+I covered a bit of this, how essentially before this all state had to be managed with classes. They use hooks exclusively from day one - thank god, I don't want to learn outdated react, especially for my work, I'm doing green-field web development not going into old codebases, if I did, I'd refactor it into hooks anyways for their sake if I could. 
+
+Run prints/console logs on components if they don't work, and then if that doesn't work print out the variables and props. Then it talks about using debugger - writing the command debugger anywhere in your code, the execution will pause once it arrives at a point where the debugger command gets executed. Highly recommended to add React developer tools extension to Chrome. It adds a Components tab - Super buggy apparently uses 100% of CPU frequently (The comments just made me learn about Vue and Angular which are essentially serving the same purpose, but different, good to know you have options down the line.)
+
+RULES OF HOOKS - 
+there are some rules; sends a link. I'll read the links at the end of all of this. 
+The useState function, as well as useEffect(introduced later it says, so this is just a namedrop of something we'll learn later) must NOT be called from inside a loop, a conditional expression, or any place that is not a function defining a component. Hmph, let me re-read that. Not inside a loop. Not inside a conditional expression. So essentially only when you're defining a component, alright, but I've seen it with functions inside the component this whole time in all these examples. Where essentially useState gives us an array, we pass a argument in it where the left of the array destructuring position 0 is the state, then we get a function for updating that state with the handle we specify in position index 1, and earlier I saw us use this to make state an array, which made me question if other data types are supported. 
+
+  if ( age > 10 ) {
+    // this does not work!
+    const [foobar, setFoobar] = useState(null)
+  }
+
+So this made me wonder again how we did the conditional rendering let me see.. Alright, so you need a component that has JS logic then returns JSX depending on the situation, but I wonder if you could change state in there.
+
+-- This is so much reading, wow! 
+
+
