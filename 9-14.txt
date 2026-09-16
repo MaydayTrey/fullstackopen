@@ -1,0 +1,341 @@
+Today is the 14th of September, looking and working on FSO from 1pm to 6pm, five hour study session, I really need to start waking up earlier and hitting this for 5 hours every day for 30 hours a week dedicated, I can do this every morning 7am-12pm, then I could do schooling 12pm-3pm, then 3pm-6pm could be site building, that's a very balanced day. 
+
+
+
+Alright but going into this, I need to do compartmentalization of the Components, taking them out of our App jsx and separating them into different components. 
+
+Refractor - extract all suitable parts into new components, but maintain the application's state and all event handlers in the App root component;
+We need three extracted components;
+Search filter - The form for adding new people to the phonebook - a component that renders all people from the phonebook
+
+How on earth do I refactor into separate components. 
+2.10 wants three;
+Filter - the search input
+PersonForm - the form with name, number and the add button
+Persons, the list of results.
+
+Mechanical procedure: 
+1)Cut the JSX out of app
+2) Paste the JSX that return into the new component
+3) Find every name not defined within the new component (Those are your props)
+4) Pass the props from App.JSX to the new component.
+
+Questions:
+When refactoring the Persons to show, which is just the people which are to be shown, individually, I was left wondering if the refactor is really a clean separation;
+const personsToShow = persons.filter(person =>
+  person.name.toLowerCase().includes(filterData.toLowerCase())
+)
+personsToShow exists within app as a variable, it's an arrow function acting on the array of persons - a separate state, but I guess this is as clean as you can get. 
+
+Notes on all of this:
+Passing a function and a value is the standard shape; 
+      <SearchFilter filterData={filterData} handleFilterData={handleFilterData} />
+Here is our component within the JSX of App, it has a handler,
+the handler is:
+  const handleFilterData = (event) => {
+  setFilter(event.target.value)
+}
+All this seems to do is say okay, on Change, call the setFunction and pass the event.target.value, so in this case the event object is an input, so the value is the string typed in, it gets set to state? Seems sort of strange like this could probably be a one liner when the handler is literally just changing state, idk. Maybe I'm wrong, but can you please explain this relationship? 
+
+Answer: Yes this could be a one-liner; in this case handleFilterData does nothing except forward the typed string into state, handlers do not exist for setFilter's sake. The setter alone can't be wired to onChange -
+React would call setFilter with the event object, and your state would become a DOM event, the handler exists to do a small translation, take .target.value out of it, then pass that in. 
+A setter changes one piece of state - a handler answers "what should happen when this occurs" think of EventHandlers, in our addPerson example we preventDefault, build an object, run a duplicate check, then calls three setters 
+
+Setter - Changes state
+Handler - Perform logic based on input of user prior to changing state. 
+
+Inline when it's a one expression - but if the handler goes on multiple elements or the JSX is crowded, a named function is better than inline lambda. 
+
+addPerson in my code is a handler - the handle prefix is convention nothing else. What makes a function a handler is it's passed to an event prop. onSubmit={THIS IS A HANDLER}
+Derived values run on every render, computing display data from current state - no value is involved.
+Handlers run in response to something the user did, and their output is a state change. 
+
+onChange={setSOMETHING} is broken, and why? Because there is no event at render time, and whatever is in the parentheses gets evaluated while React is building the page, the event only exists at the moment of the keystroke, inside the function React calls. It sets off a render loop, onChange={setFilter('x')} would run and set state during render causing another until you get an infinite loop. So inline sets must be callbacks, when they are trivial. 
+
+Observation - Re-rendering whole components based on one component changing is a bit wild. React re-runs the component functions and produces a new tree of plain objects, then diffs that against the previous one and updates only the DOM nodes that actually differ. DOM operations are expensive, functions are not. At scale this becomes a problem, if there were thousands of rows, an expensive calculation as a result, deep tree re-rendering. But there are circumnavigations, React.memo will wrap a component so it skips re-rendering when its props haven't changed by identity, useMemo caches an expensive calculation between renders. useCallback keeps a function identity stable so memorized child elements don't re-render pointlessly. 
+Vanilla gives you precise minimal updates at the cost of manually keeping data and DOM in sync. React gives you guaranteed correctness at the cost of some wasted computation. 
+Solid and Svelte update only what changed without re-running components. 
+
+Part C is an introduction to getting data from the server, I believe. 
+Only working on the front-end side is client-side browser functionality, but working with servers will be the back-end. Which is the third part of the course (next part) but in this one we will familiarize ourselves with how the code executing in the browser communicates with the backend.
+
+Tool used during software development: JSON Server. 
+Moving forward we will be saving the notes to the server, via the json-server. React code fetches the notes from the server and will render them onto the screen. Whenever a new note is made, the React code will also need to send it to the server, so it persists in memory.
+
+So in this situation, json-server is storing all the data in the db.json file, in the real world, data would be stored in some kind of database. 
+
+json-server allows us to enable server-side functionality in the development phase, without needing to program it.
+
+Previous we fetched with XMLHttpRequest - an HTTP request made using an XHR object - introduced in 1999, so legacy supported (No idea wtf XHR object is!), the use of XHR is no longer recommended. Most browsers widely support fetch, the fetch and promises we learned about previously. 
+
+
+When an async operation is completed, at some point - the JS engine calls the event handlers registered to the operation. JS engine is single-threaded, I remember having to learn all this stuff about the event loop etc, before. Looks like we'll be building upon Async JS. 
+Then it says something pretty wild, that today it's possible to run parallelized code with the help of "web workers". The the event loop of an individual browser window, is still handled by a single thread.  WTF are web workers?
+
+NPM - We could use fetch - but instead these guys use the axios library, for communication between browser and server. It functions like fetch, but is easier to use. Axios lets us get more familiar with adding external libraries, or npm packages to React projects. A clear indication a project uses NPM is the package.json file, this lists all dependencies. so you don't need to includes nodes_module, since this JSON will tell you what dependencies need to be installed. 
+DEPENDENCIES - External Libraries. 
+
+npm install axios - installs Axios via NPM. 
+NPM commands should always be ran in the project root directory where package.json can be found. 
+We can specify something is a development only dependency via;
+npm install PKG --save-dev
+in this instance we run;
+npm install json-server --save-dev
+
+pretty cool you get CLI functionality by appending: 
+{
+  // ... 
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "server": "json-server -p 3001 db.json"
+  },
+}copy
+We can now conveniently, without parameter definitions, start the json-server from the project root directory with the command:
+
+npm run server
+
+pwd - shows present working directory (the current directory you're in)
+cat file.json ---> will print the contents of the file.json into terminal. 
+
+npm install axios
+npm install json-server --save-dev
+
+in this axios is saved as a runtime dependency, because the application execution requires Axios to function.
+But this also specifies for json-server, it's a developmental need only. 
+
+AXIOS:
+JSON parsing is automatic - with fetch I'd have to call .json() on it, with a second promise. Axios gives me the parsed body directly.
+HTTP errors reject the promise. Fetch resolves successfully on 404 or 500, so I'd have to check response.ok, forgetting tat is a common bug. 
+Less setup for writes - POST with fetch means setting the method, stringifying the body, and adding the content-type header - with axios it'll simply be axios.post(url, object)
+
+Where fetch will win: built into browser, so no dependency and bundle size. For a simple GET the difference is a couple of lines. 
+
+in our main.jsx we add:
+import axios from 'axios'
+
+const promise = axios.get('http://localhost:3001/notes')
+console.log(promise)
+
+const promise2 = axios.get('http://localhost:3001/foobar')
+console.log(promise2)
+
+
+So this is a bit strange we're running two different localhost servers, one at port 5173, the other at 3001.
+When I run the port 5173, which is the React localhost, I have a error in the console:
+main.jsx:9 
+ GET http://localhost:3001/foobar 404 (Not Found)
+axios.js?v=4923654b:1799 Uncaught (in promise) AxiosError: Request failed with status code 404
+
+
+Looks like we're going to return to learning about Promises here;
+A Promise is an object representing the eventual completion or failure of an async operation. 
+
+A promise represents an asynchronous operation - what I remember is essentially this is an object which has certain properties, and based on those, it will tell you when it's fulfilled, if it does get fulfilled - and it either tells you pending, success, or failure. 
+
+3 Distinct States:
+Pending - async op for the promise has not yet finished, and so the final value is not yet available.
+Fulfilled - the operation has completed
+Rejected - An error prevented the final value from being determined. 
+
+To access the result of the operation represented by the promise, you must register an event handler to the promise - this is achieved using the method then:
+
+const promise = axios.get('http://localhost:3001/notes')
+
+promise.then(response => {
+  console.log(response)
+})
+
+1) Handle given to the async operation
+2) .then establishes when a reference to the result of that response, we use an arrow function here. 
+The returned thing will be a RESPONSE OBJECT - this contains all the data related to the response o four HTTP GET request - the returned data, status code, and headers. 
+
+Storing the promise object in a variable is not necessary, and generally instead you use a .then chain; 
+axios.get('http://localhost:3001/notes').then(response => {
+  const notes = response.data
+  console.log(notes)
+})
+
+This says get - then on fulfillment, .then will take response object and perform some behavior on it. 
+
+Wow, the thing is anyone can curl, so I wonder if this is what they mean by endpoint security, essentially if anyone can curl here and they have no endpoint verification, you can essentially just run a GET or POST command and the server will take it. 
+
+axios
+  .get('http://localhost:3001/notes')
+  .then(response => {
+    const notes = response.data
+    console.log(notes)
+  })
+
+same thing, but more readable. Server returns this as plain text, one long string, but Axios will parse the data into a JS array because the data format is application/json; charset=utf-8 which is specified by the server with content-type header. 
+
+I ran this code in our main.jsx;
+import ReactDOM from 'react-dom/client'
+import axios from 'axios'
+import App from './App'
+
+axios.get('http://localhost:3001/notes').then(response => {
+  const notes = response.data
+  ReactDOM.createRoot(document.getElementById('root')).render(<App notes={notes} />)
+})
+
+So, here's the thing we have two separate localhost servers, one is port 3001, which I suppose it meant to act like a db in this instance, then the 5173 which is meant to be the browser React application, I checked the network and there is indeed an XHR request GET to our 3001/notes, and it ran 200 status code for success, and did indeed pull our data. The issue whti this code is the App component only renders if you successfully retrieve a response. 
+
+We are going to move fetching into the App component - where should axios.get be placed within the component?
+
+Effect-hooks - NEW THING -
+State Hooks, that's essentially what we've been using; useState. But we also have Effect Hooks;
+Effects let a component connect to and synchronize with external systems. This includes dealing with network, browser DOM, animations, widgets written using a different UI library, and other non-React code.
+So this is our outbound sync, what we will use to fetch data from a server. 
+
+This was interesting, so it behaves as I'd somewhat expect, but also differently.
+
+
+  useEffect(() => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/notes')
+      .then(response => {
+        console.log('promise fulfilled')
+        setNotes(response.data)
+      })
+  }, [])
+  console.log('render', notes.length, 'notes')
+
+So our console log underneath will run first since useEffect is an async, so we get render 0 notes, 
+then we get 'effect' in console, the 'promise fulfilled' those are all predictable, what is sort of strange is the line underneath it, not apart of the async function runs - 'render 3 notes'?
+
+Claude said some wild stuff, it says useEffect isn't async, the function handed is an ordinary sync function, and React chooses when to call it, which is after the render is committed to the DOM. React commits the DOM, then runs the effect, printing effect, the axios call goes out that's the async part, the response arrives, .then runs and prints promise fulfilled, calling setNotes - setNotes triggers a re-render, so React runs the component function all again, from the top to bottom, and on the second run then we log the length of state now being 3. Also the param of empty brackets [] means run the effect only after the first render, without it the effect would run after every single render, including the one setNotes caused, and it'd loop! It's a hugely massive common useEffect bug
+the .then arrow function is considered an event handler. When the data arrives the JS runtime calls the function registered as the event handler, which prints promise fulfilled. And any call to a state-updating function re-renders the whole component. 
+They then instead of using useEffect wrote a reference arrow function running axios, then passed it as an argument into useEffect;
+const hook = () => {
+  console.log('effect')
+  axios
+    .get('http://localhost:3001/notes')
+    .then(response => {
+      console.log('promise fulfilled')
+      setNotes(response.data)
+    })
+}
+
+useEffect(hook, [])
+
+This second param, the second argument is what I mention above, but we can choose to go only when certain values have changed. This second param is used to specify how often the effect is ran. 
+
+You could have also written the code as:
+useEffect(() => {
+  console.log('effect')
+
+  const eventHandler = response => {
+    console.log('promise fulfilled')
+    setNotes(response.data)
+  }
+
+  const promise = axios.get('http://localhost:3001/notes')
+  promise.then(eventHandler)
+}, [])
+
+So instead of a lambda you could have a dedicated event handler function. 
+
+
+When adding notes to our app, they are not stored to the server - we are doing GET, but we need POST too!
+
+---
+Development Runtime Environment;
+Right now the app has grown increasingly complex, we have a react dev server which runs app.js and index.js, JS code goes into browser making a react app which fetches JSON from json-server via db.json.
+The JS code making the React app is running in the browser, the browser gets the JS from the React dev server, which is the application that runs after running the command npm run dev. The dev-server transforms the JS into a format understood by the browser. 
+Right now all the parts of the application are residing on the local machine, the localhost. The situation changes when the application is deployed to the internet.
+
+Exercise 2.11 -
+Continuing to develop the phonebook, e the initial state of the application in the file db.json, which should be placed at the root of the project. 
+
+What we want to do then is to refactor our code so that the initial state of data is fetched from the server using an Effect Hook.
+
+Why when running it seemed to console.log twice - I'm using <React.StrictMode>, which in development only, Strict Mode renders every component twice and runs every effect twice on mount. It's off in production build. Double invoking surfaces bugs which only show up when code runs more than once. Ahhh so it checks purity of the function. If it can survive being built, torn down, and set up again. So leaks will be visible on a double run. 
+
+
+What the hell is a RESTful API - REST API? 
+REST is a convention for building HTTP APIs. It's a set of agreed-upon conventions for how URLs and HTTP methods should map to operations on data. 
+The core idea is data is organized into resources, each with its own URL, and you act on them using HTTP methods that already exist. 
+Resources get URLs - /persons (whole collection) --> /persons/3 (one specific person)
+URL names a thing, its noun, not an action or verb. 
+GET -> /persons -> Fetch all of them
+GET -> /persons/3 -> fetch that one
+POST -> /persons -> Create a new one
+PUT -> /persons/3 -> Replace that one entirely
+PATCH -> /persons/3 -> Update part of that one
+DELETE -> /persons/3 -> Remove that one
+
+This literally seems like common sense. Nouns for resources, HTTP methods for verbs. Collections versus singulars. POST to the collection to create. 
+Statelessness - Every request carries 
+JSON-Server requires all data to be sent in JSON format. What that means in practice is that the data must be a correctly formatted string, and that the request must contain the Content-Type request header with the value application/json 
+
+Sending data to the server
+const addNote = event => {
+  event.preventDefault()
+  const noteObject = {
+    content: newNote,
+    important: Math.random() < 0.5,
+  }
+
+
+  axios
+    .post('http://localhost:3001/notes', noteObject)
+    .then(response => {
+      console.log(response)
+    })
+}
+
+Here I see the noteObject is pushed to the server, notes via POST.
+we then console.log the response. The ID was also omitted, since we decide to let the server generate ids for the resources.
+The newly created note resource is stored in the value of the data property of the response object. 
+You can then check the network dev console tool, to see the headers sent in the POST request. And since the POST request was a JavaScript Object, Axios automatically knew to set the appropriate application/json valuje for the Content-Type header. 
+
+But with this, we did not set the state of the App component, so you must alter the code; 
+const addNote = event => {
+  event.preventDefault()
+  const noteObject = {
+    content: newNote,
+    important: Math.random() > 0.5,
+  }
+
+  axios
+    .post('http://localhost:3001/notes', noteObject)
+    .then(response => {
+
+      setNotes(notes.concat(response.data))
+      setNewNote('')
+    })
+}
+
+where we are now concatenating the response from the server from our POST.
+When a server has an effect on the web applications, you face a new set of challenges; asynchronicity of the communication. 
+
+It talks about how we'll implement our own logic in the backend, and use a tool like "Postman" which helps you debug server applications. 
+
+---- End; 
+Going to do Part d and e tomorrow, in the morning, since those are apparently pretty comprehensive. It's 7pm. I need to do my work assignment 7-8/8:30 which is due today. Then tomorrow I'll finish e and d tomorrow. 
+
+I could finish this in 2 weeks, if I hit 2 chapters a day. 
+The core of the course 0 through 7, is 35 chapters total. 
+Some of the chapters really start getting dense and beefy. 
+Realistically I'll finish this 8-10 weeks, mid November. 
+
+Pushing through FSO which I could have done in Nov-Dec is literally what will qualify you as a Full-Stack developer, and open a ton of doors. 
+
+=======================================================
+SIDE-LESSON; I'm repeatedly struggling with just letting handlers change state, and I keep trying to do logic or computation on them. In Vanilla JS the handler is the renderer. 
+button.addEventListener('click', () => {
+  document.querySelector('#out').textContent = anecdotes[randomIndex()]
+})
+
+A click produces output, directly in the handler, it's how I've written logic thus-far. React splits it into two phases. 
+Where would the output go? 
+React call the handler and throws away the return value. The only thing producing output is return on a component function. A handler cannot then alter the DOM, it must only alter state which reflects the change in a JSX output. If it needs to be true after the click is finished, then the handler cannot be the carrier of it, Handlers run once and vanish. State is the only thing surviving between rendering. 
+Vanilla JS: Click -> Compute -> Write to screen
+React: Click -> Change data; Separately: State --> Render to Screen 
+When writing a handler ask yourself, what piece of data is different now. Call that setter. Stop. No return value.
+
+

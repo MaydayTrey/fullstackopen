@@ -1,0 +1,73 @@
+Full Stack Open study-  Part 2;
+Component Tree - a hierarchy of how components render within React. 
+
+App
+	Course
+		Content
+		Header
+			Part
+			Part
+			...
+In this App renders Course, which then renders Content and Header components. 
+
+Prior to this we had App rendering all the course data, rendering Header, Content and total itself - here, in part 2; we are learning that if there was a second course, we'd have to duplicate all that markup. With a Course component, App just renders one per course, and each handles its own header and parts. 
+So it's the segmentation of responsibility.
+
+
+When unpacking and passing as a prop:
+
+const Course = ({ course: { name, parts } }) => Props only has a key course, which the value is an object with 3 keys, but destructuring only looks at the level you are destructuring. 
+const {name, parts} = props
+Asks props for keys called name and parts, but prop has neither it only has course..
+So it goes props --> course --> name/id/parts
+
+so I'd have to do:
+const Course = ({ course }) => {}
+Where within this I could access course.name, and course properties now.
+Otherwise it'd be props.course.name...
+
+Or you unpack it like above:
+const Course = ({ course: { name, parts } }) => 
+
+this is like... from course, unpack name and parts. 
+
+Refresh on reduce:
+it takes an array and reduces the values you desire which are contributing to the accumulator;
+
+ const total = course.parts.reduce((accumulator, currentPart) => accumulator + currentPart.exercises, 0)
+  return (
+
+here we go into course.parts, and reduce with the accumulator established and the current part, where the part is that thing within the array, the level we must access. here we then have accumulator + the current part exercise quantity, but with an initial value set of 0, state is held within, where the return value is what the accumulator will be set to. 
+
+
+
+Updating on a new note - store the notes in App component state - 
+
+So this interesting because: we have two different states, one for the state of the thing which is an array of objects, the other is the state of the entry field. We initially set the state of a newNote - the entry value to a new note... 
+Mind you we are rendering the notes array, by passing the Note component a map of the note array. We then have some form behavior, onSubmit and onChange, onSubmit is in the form param, which says on submission, on the click, reference the callback addNote, addNote will prevent the default, then create an object with content, importance, and id, before concatenating (makes new array) then clears the newNote state. 
+So pattern here is concat the state with populated fields in the object, then wipe the state, so it's fresh.
+The interesting thing here too is we have to handle state of change, via putting an event listener on the state via onChange, otherwise you could not type into the field... What I'm guessing here is React essentially needs state stored for anything which changes and is displayed on screen, otherwise it will act as if it doesn't have the capacity to change? 
+
+React doesn't require state for everything that changes - an input with no value attribute works well on its own. The DOM element holds the text internally, I type, it updates, and React never knows or cares. But when I did value={newNote} that's a declaration: this input's value is whatever newNote says on every render. 
+
+So the reason here is because we ad the value set to newNote, and React will enforce the state you establish, regardless of what the DOM input is taking. 
+
+So I was sort of wondering why we enable state, when uncontrolled works (I suppose this means non-state)
+Because everything becomes easier after, setNewNote('') wipes state, you can easily disable the save button while the field is empty, validation of what they type, transforming input, syncing two  fields, so doing state based behavior becomes trivial. 
+
+Sufficient to return the final version. 
+
+2.6 -- Phonebook set-up, adding names to a phonebook.
+My immediate intuition is we have an array of objects kept in a state of the phonebook where we then add a new entrant by altering a state of an entryState, which is then concatenated, essentially what we just did. 
+
+newname state is intended for controlling the form input element. Then it says it can be useful to render state and other variables as text;
+<div>debug: {newName}</div>
+
+So we need an input field with a button which seems like it just adds names right now. And we can use the person's name as a value of the key property. make sure to prevent the default action of submission on HTML forms. 
+
+Prevent a user from being able to add repeats - How do you do this? I'd just go and check, with a find function, that if person.name === personObject name then throw an alert()
+
+They didn't do any form validation - 
+but required on an input form stops submission, and will show a native message, and it works with React's onSubmit
+
+pattern takes a regex and enforces format natively, pair it with title, so the browser can explain what's expected when it fails. 

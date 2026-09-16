@@ -1,0 +1,40 @@
+{
+  "persons": [
+    {
+      "name": "Mary Poppendieck",
+      "number": "39-23-6423122",
+      "id": "4"
+    },
+    {
+      "name": "Tres",
+      "number": "614 359 9390",
+      "id": "DpilZfL7WOU"
+    },
+    {
+      "name": "Billie",
+      "number": "123456789",
+      "id": "VKTmT-OeQPk"
+    },
+    {
+      "name": "Tesss",
+      "number": "TheRes",
+      "id": "8EFXGApvMeU"
+    },
+    {
+      "name": "CRUD",
+      "number": "Submit",
+      "id": "KRoKYfOWnsw"
+    },
+    {
+      "name": "Claudine",
+      "number": "123",
+      "id": "1dl1Nk6KXMk"
+    },
+    {
+      "name": "Billy Goat",
+      "number": "1",
+      "id": "akYR6wk9dTI"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

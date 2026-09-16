@@ -598,4 +598,171 @@ So this made me wonder again how we did the conditional rendering let me see.. A
 
 -- This is so much reading, wow! 
 
+Event Handling Revisited - 
+
+const App = () => {
+  const [value, setValue] = useState(10)
+
+  return (
+    <div>
+      {value}
+      <button>reset to zero</button>
+    </div>
+  )
+}
+They want button click to reset the value, stored in state. 
+It then says Event handlers must always be a function or a reference to a function. The button will not work if the event handler is set to a variable of any other type. 
+React has really good console logs for debugging though!
+
+event handler is defined as a function call, meaning the event handler is assigned the returned value from the function.
+So, just no function calling, use function reference you're essentially giving a callback, use this function when you see fit. 
+
+Bit relieved enough people struggled with this they said that it was an issue and they needed to explain it, because it's comforting to know you're not the only one struggling!
+
+
+Event Handlers are often defined in a separate place. 
+
+const App = () => {
+  const [value, setValue] = useState(10)
+
+  const handleClick = () =>
+    console.log('clicked the button')
+
+  return (
+    <div>
+      {value}
+      <button onClick={handleClick}>button</button>
+    </div>
+  )
+}
+
+Keeps the logic clean, and allows modularity. 
+Just a function returning a function  - I thought this might just be a callback, but a callback is a function passed into another function as an argument. Returning a function is a higher-order function(which often creates a closure)
+A callback
+// The callback function
+function sayHello() {
+  console.log("Hello!");
+}
+
+// The function accepting a callback
+function runTwice(callback) {
+  callback();
+  callback();
+}
+
+runTwice(sayHello); // Passing sayHello as an argument
+
+
+If instead of receiving a function you manufacture and return one: 
+function makeMultiplier(multiplier) {
+  // Returns a brand new function
+  return function(num) {
+    return num * multiplier;
+  };
+}
+
+const triple = makeMultiplier(3);
+console.log(triple(5)); // 15
+
+Returning a function creates a closure - which allows the inner function to remember the state of the environment it was born in.
+Quick refresh on the privacy aspect too:
+function createCounter() {
+  let count = 0; // Completely private variable
+
+  return function() {
+    count++;
+    return count;
+  };
+}
+
+const counter = createCounter();
+console.log(counter()); // 1
+console.log(counter()); // 2
+// There is no way to manually reset `count` to 0 from here
+
+
+Oh god people said this wasn't for beginners but I love the welcoming understanding of the confusion I experience:
+"You probably won't need to use functions that return functions in any of the exercises in this course. If the topic seems particularly confusing, you may skip over this section for now and return to it later."
+
+const App = () => {
+  const [value, setValue] = useState(10)
+
+
+  const hello = () => {
+    const handler = () => console.log('hello world')
+    return handler
+  }
+
+  return (
+    <div>
+      {value}
+      <button onClick={hello()}>button</button>
+    </div>
+  )
+}
+
+Isn't hello() an invocation, shouldn't we just pass {hello}?
+Ohhh they're doing a weird little trick. we're returning the function, so it stays as a function reference, weird!
+The section is definitely confusing!
+const App = () => {
+  const [value, setValue] = useState(10)
+
+
+  const hello = (who) => {
+    const handler = () => {
+      console.log('hello', who)
+    }
+    return handler
+  }
+
+  return (
+    <div>
+      {value}
+
+      <button onClick={hello('world')}>button</button>
+      <button onClick={hello('react')}>button</button>
+      <button onClick={hello('function')}>button</button>
+    </div>
+  )
+}
+
+What's going on here, so we have a function passed the param of who, then in that there is another function, handler which console.log's who, and then we return handler - I feel like this is some wild closure stuff going on, in a React context. 
+So they just said a Event Handler can't be a function call, but here they are doing function calls, but I guess it's acceptable since the function called returns a function. 
+
+Then they do some pretty weird stuff. 
+const hello = (who) => {
+  const handler = () => {
+    console.log('hello', who)
+  }
+
+  return handler
+}
+
+They eliminate helper variables, and directly return the created function 
+const hello = (who) => {
+  return () => {
+    console.log('hello', who)
+  }
+}
+But then hello is on a single return command, the curly braces are omitted 
+const hello = (who) =>
+  () => {
+    console.log('hello', who)
+  }
+
+Annnnd I'm left more confused for the sake of saving some lines of code, what I really dislike. 
+const hello = (who) => () => {
+  console.log('hello', who)
+}
+
+I'm not even sure what the hell is happening with handler being a function that takes no params then is returned, alright, like that throws me off. Just going to go ahead and take his advice and continue down reading. 
+
+This is soooo much reading!
+
+I haven't even gotten to the exercises. I started this at 2-3pm and it's 7 now wtf!
+
+Passing Event Handlers to Child Components - I glossed over
+
+Do Not Define Components Within Components 
+
 

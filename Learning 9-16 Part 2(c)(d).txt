@@ -1,0 +1,607 @@
+9-16 - FSO; Part 2(c) + (d)
+
+-- So when we incorporate into our package.json the following;
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "server": "json-server -p 3001 db.json"
+  },
+
+Here you can see dev and server - so when you run these they do the corresponding commands; in npm run server, we will run the command associated with that key, this is JSON - so we are running json-server -p 3001 db.json, JSON Server is worth learning on its own it allows you to simulate a backend, and is useful for software development.
+
+We also end up using AXIOS - which is for Async JS, worth learning the difference here, it seems like it's for ease-of-use, but understanding the differences between Axios and regular Async.
+
+Discusses promise objects, which I have some familiarity already due to Async JavaScript. 
+Three states:
+Pending
+Fulfilled
+Rejected
+
+AXIOS CHAINED SYNTAX:
+axios
+  .get('http://localhost:3001/notes')
+  .then(response => {
+    const notes = response.data
+    console.log(notes)
+  })
+
+axios
+	.get
+	.then(THE RESPONSE => { SOME FUNCTION ON THE RESPONSE})
+
+Effect Hooks - Paramount to understand;
+Definition per the documentation:
+Effects let a component connect to and synchronize with external systems. This includes dealing with network, browser DOM, animations, widgets written using a different UI library, and other non-React code.
+
+These are the tool to use when fetching data from the server - 
+In the example shown I see we set the State initially to an empty container, an array in this instance, which will be populated by the useEffect code. 
+
+  useEffect(() => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/notes')
+      .then(response => {
+        console.log('promise fulfilled')
+        setNotes(response.data)
+      })
+  }, [])
+  console.log('render', notes.length, 'notes')
+
+What does this code do:
+We are running strict mode so everything is going to run twice (Checks for failures during build - reconstruction, ensuring the purity of our functions) Then axios runs (async) a .get command to localhost at 3001, where you'd get a promise object, then we get the response object; which contains information, important response.data - the data we get given back.
+
+Axios code is ran immediately after rendering - it's important to note the [] parameter is us saying to do this after the first render only, otherwise this could run every single render.
+
+They then run the code in a different form:
+const hook = () => {
+  console.log('effect')
+  axios
+    .get('http://localhost:3001/notes')
+    .then(response => {
+      console.log('promise fulfilled')
+      setNotes(response.data)
+    })
+}
+
+useEffect(hook, [])
+
+So before it looked like we were essentially just using a function, but in this instance it looks like we're creating a variable reference to the action. 
+Which is an arrow function - does this make it behave as a callback which can be invoked upon an action/event?
+
+Effects run -- think what is an effect, it's async code for React, which runs as you specify it, so React components synchronize the behavior. By default effects run after every completed render, you can choose to fire only when certain values have changed. 
+
+You could also have the code as:
+useEffect(() => {
+  console.log('effect')
+
+  const eventHandler = response => {
+    console.log('promise fulfilled')
+    setNotes(response.data)
+  }
+
+  const promise = axios.get('http://localhost:3001/notes')
+  promise.then(eventHandler)
+}, [])
+
+What is the implication of this, separating the promise from the event handler? Is it making the division of behavior explicit?
+What I understand is from this we could have a general event Handler which is used for multiple promises? That's my first intuition of a use case.
+They say this isn't usually necessary, and that a more compact way of representing things as follows is sufficient:
+useEffect(() => {
+  console.log('effect')
+  axios
+    .get('http://localhost:3001/notes')
+    .then(response => {
+      console.log('promise fulfilled')
+      setNotes(response.data)
+    })
+}, [])
+This is our get and then chaining of axios. 
+
+===========================
+Part 2(d) - Altering data in a server; mentions RESTful API. 
+REST - you refer to individual data objects as RESOURCES. Every resource has a unique address associated with it - its URL.
+Resources are fetched using HTTP GET requests.
+Creating a new resource: HTTP POST request to the notes URL.
+All data must be sent in JSON format. 
+The request must contain the Content-Type request header with the value application/json
+
+const addNote = event => {
+  event.preventDefault()
+  const noteObject = {
+    content: newNote,
+    important: Math.random() < 0.5,
+  }
+
+
+  axios
+    .post('http://localhost:3001/notes', noteObject)
+    .then(response => {
+      console.log(response)
+    })
+}
+
+What is going on here:
+Axios is running, and instead of get, we are POSTing to 3001/notes, our noteObject, and logging the response.
+Omit the id property, since it is better to let the server generate ids for resources. 
+
+Even after you POST, your App component will not Render instantly. You must update the state, within the axios commands.
+Question - 
+const addNote = event => {
+  event.preventDefault()
+  const noteObject = {
+    content: newNote,
+    important: Math.random() > 0.5,
+  }
+
+  axios
+    .post('http://localhost:3001/notes', noteObject)
+    .then(response => {
+
+      setNotes(notes.concat(response.data))
+      setNewNote('')
+    })
+}
+
+This is running Axios, but not Effect Hook? I thought effect hook was meant to keep synchronization for a React component when dealing with asynchronous code?
+
+When dealing with Web Apps interacting with a back-end, with a server, you incur a totally new dimension, and thus issues that may arise from it. 
+You can check the path, to the resource to keep tabs on the state and how it is behaving. 
+Later you will learn of POSTMAN - which is a tool that lets you debug server applications
+
+const Note = ({ note, toggleImportance }) => {
+  const label = note.important
+    ? 'make not important' : 'make important'
+
+  return (
+    <li>
+      {note.content} 
+      <button onClick={toggleImportance}>{label}</button>
+    </li>
+  )
+}
+
+Then there is a Note component, which has the label dependent on the truth/false Boolean value of important, if it is important so the first option of the ternary, then the button toggle should be making it the inverse; so make not important, if it isn't important we have the button of making it important reflected.
+
+You can modify the JSON-Server backend notes for replacing the entire note with an HTTP PUT request, or only changing some properties of it via an HTTP PATCH request.
+
+PUT - Replaces entire note
+PATCH - Replace some properties of the note
+
+const toggleImportanceOf = id => {
+  const url = `http://localhost:3001/notes/${id}`
+  const note = notes.find(n => n.id === id)
+  const changedNote = { ...note, important: !note.important }
+
+  axios.put(url, changedNote).then(response => {
+    setNotes(notes.map(note => note.id === id ? response.data : note))
+  })
+}
+
+When toggleImportanceOf is ran, we take the id as the parameter, go to the url of that note, and we find the note where its id is equal to our id param, and then changed note, is destructuring the note, but overwriting the importance of it, whatever it is will be inverted.
+important: !note.important ---> Make the important property the opposite Boolean value of whatever it is right now.
+Then using axios; we run a ,put, where we pass the param, url for the destination, and the thing which we are sending to the server as the second.
+This is an axios PUT command. So we are replacing the entire note.
+We then set the data for notes, recall all data within state must be changed, and map returns a new array, so if it doesn't match the ID that note stays as it was in the original note state, but if it matches our ID we put in our response.data (updated importance) instead. 
+
+
+How does React deal with shallow copies? The new object, changedNote is a shallow copy, the values of the new object are the same as the values of the old object, if the values of the old object were objects themselves, then the copied values in the new object would reference the same objects that were in the old object --- What this sounds like is past the first layer, they'd be pointers to the objects which were supposed to be copied, I feel like that could be a serious issue for React since it requires a new object state, not this pointer referencing? 
+Answer: My understanding of shallow copying is right- and a well-known category for React bugs.
+React compares the object you hand to the setter against the previous, by identity, one level. So spread produces a new outer object, and by that comparison it appears as a changed object and re-render occurs. This can be useful, in that it lets React skip work on components whose props didn't actually change. But when you mutate through shared reference, you can get some nasty errors.
+const updated = { ...person }
+updated.address.city = 'Franklin'
+setPerson(updated)
+---> updated is a new outer object, so React will re-render, but updated.address and person.address are the same object, pointing to a referring to the same thing! The old state gets mutated too, so React notices no difference, because there is no dif!
+The fix is spread at every level of change:
+const updated = {
+  ...person,
+  address: { ...person.address, city: 'Franklin' }
+}
+
+Every object on the path from the root to the thing you're changing needs to be new!
+
+Later on you'll learn of a library called Immer which allows you to write mutating-looking code and produces correct immutable updates underneath, will be covered later. 
+
+src/services directory, and then they add a file called notes.js;
+import axios from 'axios'
+const baseUrl = 'http://localhost:3001/notes' -- BASE URL
+
+const getAll = () => {
+	return axios.get(baseUrl)
+} --- What is going on here, this is running a GET on the base URL, what is the affect of that? 
+
+const create = newObject => {
+	return axios.post(baseUrl, newObject)
+}
+
+It looks like we're creating callback functions here for server functionality using axios, and in my mind having return statements is a bit strange, because I think of return as returning data which has had logic performed on it. The return for get makes sense since we should be grabbing data and returning it, but for a post? Isn't post sending data, so returning that is a bit logically confusing for me.
+
+const update = (id, newObject) => {
+	return axios.put('${baseUrl}/${id}', newObject)
+} --> PUT HTTP request, using the base URL and the ID this is updating something, but there are two alternatives we have right, patch then post so why do we run post instead of patch what's the trade-off or use of over the other?
+
+export default {
+	getAll: getAll,
+	create: create,
+	update: update
+} ---> This is new to me it looks like it's exporting functions, and a list of them essentially.
+
+What I think this is, is sort of the building blocks of CRUD all wrapped into a file which we have in src/services/note.js but really this could just be /CRUDFunctions
+because really I could make the baseUrl interchangeable, and all of this would be the same interchangeably with any baseUrl right? Since there is like a set convention of behavior. I don't want to tangent, but I would be stunned if there wasn't an API that handles all of this.
+
+The import in the App component is interesting:
+import noteService from './services/notes'
+This is a relative import, but we are importing multiple functions as a single noteService, using them as;
+noteService
+	.getAll()
+	.then(response => {
+		setNotes(response.data)
+	})
+ }, [])
+Interesting here, so this resembles how axios looks, the chaining, and it allows us to create our own functions which we could have based on interacting with a certain server architecture. And make your code much more readable.
+
+Part of me dislikes the logic behind condensing code for aesthetic, for the sake of appearing simple, because although it appears to someone familiar with the codebase;
+noteService
+  .getAll()
+  .then(response => {
+    setNotes(response.data)
+  })
+
+going from this to 
+noteService
+  .getAll()
+  .then(initialNotes => {
+    setNotes(initialNotes)
+  })
+for the sake of "Much nicer to use" essentially just making the code look prettier, and adding a layer of obfuscation, is annoying to me, and coders do it way too much. 
+
+Also, the start of this just randomly had us jump into our old notes, and I can't even remember where that was...
+We went from phonebook all of a sudden to notes
+
+Axios handles rejected promises by providing the then method with a second callback function, which is called in the situation in which the promise is rejected. You more commonly, will use the catch method for rejected promises.
+
+axios
+  .get('http://example.com/probably_will_fail')
+  .then(response => {
+    console.log('success!')
+  })
+  .catch(error => {
+    console.log('fail')
+  })
+
+When doing multiple .thens, you are creating a promise chain.
+The catch method defines a handler function in the event any of the promises within the chain fail, a function will be called to handle the failure. 
+axios
+  .get('http://...')
+  .then(response => response.data)
+  .then(data => {
+    // ...
+  })
+  .catch(error => {
+    console.log('fail')
+  })
+
+
+
+
+
+
+
+2.12 - 2.15 apply to the Phonebook app;
+2.12 - Currently the numbers that are added to the phonebook are not saved to the backend server. Fix that.
+2.13 - Extract the code that handles the communication with the back end into its own module by following the example earlier
+2.14 - Make it possible for users to delete entries from the phonebook, the deletion can be done through a dedicated button for each person in the phonebook list. Confirm the action by using the window.confirm method - no idea what that is.HTTP delete request to the resource's URL, HTTP delete request to baseURL/data/id
+2.15 - Optional, but I'm definitely doing it - Change the functionality so that if a number is added to an already existing user, the new number will replace the older number - use the HTTP PUT method - then we will need to destructure
+
+I fed in my confusion about how the notes app wasn't something I coded along too, and indeed it's just a reference. Nothing from it gets submitted, read the exercises and build, and learn from the source material then.
+
+Corrections from Claude:
+useEffect isn't an async tool - it's the run after tool. Use effect is how you say after rendering, do this.
+
+2.12 - The numbers added to the phonebook are not saved, I'll need to use a post to send that data to the server so it saves.
+
+  const addPerson = (event) => {
+    event.preventDefault()
+    const personObject = {
+      name: newName,
+      number: newNumber
+    }
+    const exists = persons.some(person => person.name.trim() === newName.trim())
+    if(exists){
+      alert(`${newName} is already added to the phonebook.`)
+    } else{
+    /*So after we confirm the person doesn't exist, we need to send the data to the server.
+    Using the addNote as reference, we need to use axios. */
+    // THE NON SERVER BASED WAY: setPersons(persons.concat(personObject))
+    // BELOW MY ATTEMPT AT THE SERVER WAY:
+    axios
+      .post('http://localhost:3001/persons', personObject)
+      .then(() => {
+      }) // So right now this is 
+      setNewName('')
+      setNewNumber('')
+    } 
+  }
+
+
+So right now this is indeed sending the code to the server, and it's catching it, but the webpage is not re-rendering, and I think it's because the state isn't refreshing, so I need to set the state of notes to be what the response data is, let me see if that works..
+
+    } else{
+    /*So after we confirm the person doesn't exist, we need to send the data to the server.
+    Using the addNote as reference, we need to use axios. */
+    // THE NON SERVER BASED WAY: setPersons(persons.concat(personObject))
+    // BELOW MY ATTEMPT AT THE SERVER WAY:
+    axios
+      .post('http://localhost:3001/persons', personObject)
+      .then(response => {
+        setPersons(response.data)
+      }) // So right now this is 
+      setNewName('')
+      setNewNumber('')
+    } 
+  }
+
+Nope, now on submission we get a blank page.. Let me see what the dev console is saying
+Uncaught TypeError: persons.filter is not a function
+    at App (App.jsx:54:31)
+Consider adding an error boundary to your tree to customize error handling behavior.
+Alright, not sure what the hell is going on here.. Going to read what FSO is saying..
+Okay... Yeah they mention in their notes, it isn't rendered to the screen yet, because they didn't update the state
+  axios
+    .post('http://localhost:3001/notes', noteObject)
+    .then(response => {
+      setNotes(notes.concat(response.data))
+      setNewNote('')
+    })
+}
+Let me go ahead and try this, I was just passing in response data, let me do persons.concat(response.data) Ah so the response tab will show you that response.data is the object you created, okay. So in this way we're just concat'ing the object we made to the server. 
+
+Okay, yep, got it. So I think the issue is I was literally making the state of persons setPersons(response.data) which is just a single object, but still kind of surprised me how React behaved, I would've anticipated that all the rest of the phonebook entrants disappear, while only the new response.data object existed, but I guess not, this may be because I walked away from the code and I'm coming back after some days so I don't understand all the dynamics right now.  Walking away from code and coming back is for me an uphill battle trying to understand everything again, I can't imagine walking into someone else's code (tangential, don't respond, obviously it's a big deal - hence maintainability is so emphasized)
+
+I wanted to see if the server-back end would refresh when a new entry was put, after submitting the page with the objects did not refresh/render to reflect this- but it's only JSON, so of course - but definitely worth being aware of. 
+
+Okay, that's 2.12- let's see 2.13:
+It wants us to extract the code that handles the communication, into its own module. Alright, let me go check that out. 
+[I feel like use Effect, the Effect Hook was totally glossed over and I'll need to look into that on my own and practice with it.]
+
+Alright reading the sectional; Extracting Communication with the Backend into a Separate Module:
+This is due to Single Responsibility Principle
+/services directory 
+Okay, got this as well. I made a /services/personCom.jsx, essentially using their notes code as a template:
+/*
+The following is extracted communications capacity and functions with the back-end JSON-Server.
+9-16-26
+Rationale:
+The example shown in FSO has us hardcode the base URL which will repeatedly be used for various commands.
+and implements Axios.
+*/
+
+import axios from 'axios'
+
+const baseUrl = 'http://localhost:3001/persons';
+
+const getAll = () => {
+    return axios.get(baseUrl);
+}
+
+
+//This is literally the code we had prior, just condensed separation of responsibility.
+const newPerson = personObject => {
+    return axios.post(baseUrl, personObject)
+}
+
+//I am pasting in the code we have made..
+/*
+This before the refactor, this existed within the else chain of our addPerson function:
+    axios
+      .post('http://localhost:3001/persons', personObject)
+      .then(response => {
+        setPersons(persons.concat(response.data))
+        setNewName('')
+        setNewNumber('')
+      }) // So right now this is 
+
+*/
+
+export default {getAll, newPerson}
+
+The code changed within App to:
+    } else{
+    /*So after we confirm the person doesn't exist, we need to send the data to the server.
+    Using the addNote as reference, we need to use axios. */
+    // THE NON SERVER BASED WAY: setPersons(persons.concat(personObject))
+    // BELOW MY ATTEMPT AT THE SERVER WAY:
+    CRUD.newPerson(personObject)
+      .then(response => {
+        setPersons(persons.concat(response.data))
+        setNewName('')
+        setNewNumber('')
+      })
+    } 
+  }
+
+I sort of feel like I should just copy all the functionality right now, they're not asking for more, but just in case I'm going to make up what else they had written within their services module. updatePerson will be a bit difficult as we don't facilitate it at all right now, there is no functionality to express the desire to update someone, the thing that comes to mind and as a lazy way is a entry field at the end where we type their name, then underneath that another entry field for the new number, we could probably do that. It would just require the persons state to be updated, with a map where we find the id that matches and go in and change its number accordingly.
+
+But before I do something unnecessary, let me see what the next exercise wants:
+2.14 - Make it possible to delete entries from the phonebook. Have a dedicated button for each user in the phonebook list.
+Seems like we need to go into the generation of the persons and add a delete button, and if that delete button is clicked we will need to send an axios delete request to the resource URL so `${baseUrl}/${id}` again, 
+axios.delete('https://example.com')
+  .then(response => {
+    console.log('Resource deleted:', response.data);
+  })
+  .catch(error => {
+    console.error('Error deleting resource:', error);
+  });
+
+We will need a catch in case that thing doesn't delete for some reason, going to go ahead and first start with the module personCom code to create a delete function - I think we really only need the id passed into it, since it's just a URL specification.
+Alright did that, now I'm still running return on some things that don't make sense to me, why are we returning a post and a delete, I guess these are just callback functions; now I need to do the dedicated buttons. which will be JSX, when every name is rendered it needs a <button>delete</button> 
+
+Now I need to revisit the whole button behavior, I need it where when the button is clicked it causes the axios delete command to get sent, so using deletePerson doing this I'm having to refresh wiring up a button, I had to google it but:
+const Persons = ({ personsToShow }) => {
+    return (
+    <div>
+        {personsToShow.map((person) => 
+        <>
+        <p key={person.name}>{person.name} {person.number}</p>
+        <button type="button" onClick={deletePersonHandler}>delete</button>
+        </>)}
+    </div>
+    )
+}
+
+The issue now is I need a deletePersonHandler made, and I also need it passed as a prop to the Persons component.
+oooo how the hell am I going to pull the id here? 
+const deletePersonHandler = (event) => {
+  CRUD.deletePerson 
+}
+I need the id from the event. So the id needs to be attached to the event somehow. Maybe event.target.id?
+I might be totally wrong there, but going to try it. Alright before I mess with rendering, and mapping let me see if it even deletes it from the backend.
+First off I'm getting an error in console that each child in a list should have a unique key prop, so I'm pretty sure my deletes need a key, I will make it the id. That did not work, let me see if I should make it person.name, nope totally just ran into something crazy because the actual <p> element has the same key when I did that, sheeesh so every element needs its own unique key and they can't be shared, I'm tempted to make the whole thing a div where the key is just person.name, that may be simpler than dealing with all of this. Ran into some weird JSX I was getting like syntax errors, plus I think I'd just need to still end up giving everything in that div keys anyways.
+Kind of confused because:       "name": "Arto Hellas",
+      "number": "040-123456",
+      "id": "1"
+
+There is definitely an id on each person.
+But it still says Each child in a list should have a unique key prop.
+Decided to try and ignore that so I could test deleting (ignoring bad code and just going is a bad habit, I shouldn't do, but I just wanted to see if deleting at least worked) but I got an error:
+axios.js?v=dc6d28f3:2078 Uncaught (in promise) AxiosError: Request failed with status code 404
+So.. Trying to figure this out, 404 Not Found --- because it's trying to delete the baseUrl alone it looks like, and not the id? weird. 
+
+My code in personComs is const deletePerson = (id) => {
+    return axios.delete(`${baseUrl}/${id}`)
+}
+
+So it shouldn't be trying to delete that? What I'm guessing is event.target.id isn't probably pulling the id, let me console log that to find out.
+Yeah it's literally console logging a blank, and console logging event.target.value did the same, weird! So that's the root of this, how the hell do I pull the id from the button click? 
+
+
+So JSX requires the outermost fragment gets the key when dealing with multiple elements being rendered via map;
+      
+const Persons = ({ personsToShow, deletePersonHandler }) => {
+    return (
+    <div>
+        {personsToShow.map((person) => 
+        <div key={person.id}>
+        <p key={person.name}>{person.name} {person.number}</p>
+        <button type="button" onClick={deletePersonHandler} key={person.id}>delete</button>
+        <div/>)}
+    </div>
+    )
+}
+
+But I'm running into a weird issue where it says the div outside the map doesn't have a corresponding closing tag?
+
+Second issue:
+I can't get the id from the event, and shouldn't try. The button has no id attribute in the DOM, and key won't help - React consumes it internally, and never passes it through to the element. 
+Ahhhh I can do it inside the map, not the handler in the App, sheeesh!
+<button onClick={() => deletePersonHandler(person.id)}>delete</button>
+
+This arrow function creates a new function per person, and each one closes over that person's id.
+Filter --> Find the id that matches that which was removed and create a new list without that object. 
+
+Return axios.delete is returning the promise back to the caller. 
+
+Deletes are not standardized the way GETs are, it depends on the server.. json-server returns an empty object, older versions return the deleted object
+in our case, the response.data is the object deleted, so we can filter based off that object. 
+I thought so, but nope. I just decided to delete off id, which is probably safer anyways. 
+const deletePersonHandler = (id) => {
+  const isDeleteUser = window.confirm("Are you sure you want to delete this person?")
+  if(isDeleteUser){
+    CRUD.deletePerson(id)
+      .then(response => {
+        console.log(response.data)
+        setPersons(persons.filter(person => person.id !== id))
+      })
+  } else{
+    console.log("Not deleted")
+  }
+}
+
+So why did it fail, if the deleted data response is the object deleted? Because !== checks object identity. 
+response.data was a new object parsed from the JSON in the HTTP response, even though it's identical to the thing we intended to remove on surface level, under the hood, it's a different object. !== on objects compares references not contents. The lesson here is to compare based on a reliable identification, not the actual object. 
+
+Alright 2.15 is optional but definitely, interesting.. We already have a check for already exists, so adding a new person would need to change from saying "Already exists!" to a window.confirm where we check if the user wants to replace the current number in the system, then we would need to do a axios.put to update that information, and re-render where the object has the updated number, where it's just concat.
+
+I thought it was strange we have to update the server, then perform logic on state separately, instead of just actively pulling state from server. What I did was optimistic, I assume the server did what I wanted, and I patch local state to match, this is cheap, instead, and no second round trip - you can use .check with axios for this for errors, but I can see there's a blaring weakness there too. 
+What I'm describing is after a successful write, GET the collection again and replace state wholesale, and it's a real strategy that apps use. Refetching is simpler to reason about, and always correct. One source of truth, just re-read. Optimistic is faster and lighter, one request instead of two, no visible delay, and less server load. On large collection, refetching everything is wasteful. But Optimistic can also go stale, if somone changes something between the fetch and write, your local copy will be wrong. Most do a hybrid; handled by a library - React Query.
+Caches server data and refetches on a schedule. 
+
+=======================================
+PART(E):
+Wtf is a CSS preprocessor?
+
+We add a index.css file
+
+This is going over CSS again. Selectors and declarations.
+Declaration is a property and value, and the selectors have some interesting behavior, ancestors, etc.
+You can have an arbitrary amount of property/value pairs.
+There are various CSS selectors, worth checking out. 
+Talks about class selectors, in react we use className attribute instead of class. So our JSX would be className=`` whatever the corresponding CSS class is that you want to use.
+
+They end up implementing an error message as its own React component, src/components/Notfication.jsx
+
+const Notification = ({ message }) => {
+	if(message === null) {
+	return null
+	}
+	return (
+	<div className="error">
+		{message}
+	</div> 
+	)
+}
+
+export default Notification
+
+They end up adding a new piece of state called errorMessage into the app component, initializing it with some error message to test it right away.
+import Notification from ''./components/Notification'
+const [errorMessage, setErrorMessage] = useState('Some error')
+
+then in the App return it returns <Notification message={errorMessage} />
+They then add a some CSS about the error message..
+Then they add logic. 
+where a .catch will run and the error is used
+
+      .catch(error => {
+        setErrorMessage(
+          `Note '${note.content}' was already removed from server`
+        )
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+Ah so they show the error which is descriptive, then after so long they wipe it to null. 
+React can also do inline styling. We follow camelCase and wrap the values of any property in quotes.
+CSS:
+{
+  color: green;
+  font-style: italic;
+}
+
+React inline:
+{
+  color: 'green',
+  fontStyle: 'italic'
+}
+
+const Footer = () => {
+  const footerStyle = {
+    color: 'green',
+    fontStyle: 'italic'
+  }
+
+  return (
+    <div style={footerStyle}>
+      <br />
+      <p>
+        Note app, Department of Computer Science, University of Helsinki 2025
+      </p>
+    </div>
+  )
+}
+
+export default Footer
+
+
+Then the handler would take an id instead of an event
+

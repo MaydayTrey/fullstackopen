@@ -1,3 +1,12 @@
+/* 
+Just copied these over from part1/courseInfo, coming off a couple days away, so these notes are helpful. But it shows it's important to date the notes.
+- TG, 9/12/26.
+
+
+
+*/
+
+
 const Header = (prop) => {
   return (
     <h1>{prop.course}</h1>
